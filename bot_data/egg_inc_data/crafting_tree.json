@@ -1,0 +1,354 @@
+{
+    "T3 GOLD METEORITE": {
+        "T2 GOLD METEORITE": 11
+    },
+    "T2 GOLD METEORITE": {
+        "T1 GOLD METEORITE": 9
+    },
+    "T3 SOLAR TITANIUM": {
+        "T2 SOLAR TITANIUM": 12
+    },
+    "T2 SOLAR TITANIUM": {
+        "T1 SOLAR TITANIUM": 10
+    },
+    "T3 TAU CETI GEODE": {
+        "T2 TAU CETI GEODE": 14
+    },
+    "T2 TAU CETI GEODE": {
+        "T1 TAU CETI GEODE": 12
+    },
+    "T3 PROPHECY STONE": {
+        "T2 PROPHECY STONE": 12,
+        "T3 SOUL STONE": 2
+    },
+    "T2 PROPHECY STONE": {
+        "T1 PROPHECY STONE": 10
+    },
+    "T1 PROPHECY STONE": {
+        "T0 PROPHECY STONE FRAGMENT": 20
+    },
+    "T3 CLARITY STONE": {
+        "T2 CLARITY STONE": 20,
+        "T3 PROPHECY STONE": 2
+    },
+    "T2 CLARITY STONE": {
+        "T1 CLARITY STONE": 10,
+        "T1 PROPHECY STONE": 2
+    },
+    "T1 CLARITY STONE": {
+        "T0 CLARITY STONE FRAGMENT": 20
+    },
+    "T3 LIFE STONE": {
+        "T2 LIFE STONE": 15
+    },
+    "T2 LIFE STONE": {
+        "T1 LIFE STONE": 12
+    },
+    "T1 LIFE STONE": {
+        "T0 LIFE STONE FRAGMENT": 20
+    },
+    "T3 QUANTUM STONE": {
+        "T2 QUANTUM STONE": 20
+    },
+    "T2 QUANTUM STONE": {
+        "T1 QUANTUM STONE": 15
+    },
+    "T1 QUANTUM STONE": {
+        "T0 QUANTUM STONE FRAGMENT": 20
+    },
+    "T3 DILITHIUM STONE": {
+        "T2 DILITHIUM STONE": 15
+    },
+    "T2 DILITHIUM STONE": {
+        "T1 DILITHIUM STONE": 12
+    },
+    "T1 DILITHIUM STONE": {
+        "T0 DILITHIUM STONE FRAGMENT": 20
+    },
+    "T3 SOUL STONE": {
+        "T2 SOUL STONE": 20
+    },
+    "T2 SOUL STONE": {
+        "T1 SOUL STONE": 15
+    },
+    "T1 SOUL STONE": {
+        "T0 SOUL STONE FRAGMENT": 20
+    },
+    "T3 TERRA STONE": {
+        "T2 TERRA STONE": 20
+    },
+    "T2 TERRA STONE": {
+        "T1 TERRA STONE": 15
+    },
+    "T1 TERRA STONE": {
+        "T0 TERRA STONE FRAGMENT": 20
+    },
+    "T3 TACHYON STONE": {
+        "T2 TACHYON STONE": 20
+    },
+    "T2 TACHYON STONE": {
+        "T1 TACHYON STONE": 15
+    },
+    "T1 TACHYON STONE": {
+        "T0 TACHYON STONE FRAGMENT": 20
+    },
+    "T3 SHELL STONE": {
+        "T2 SHELL STONE": 10,
+        "T2 DILITHIUM STONE": 5
+    },
+    "T2 SHELL STONE": {
+        "T1 SHELL STONE": 20
+    },
+    "T1 SHELL STONE": {
+        "T0 SHELL STONE FRAGMENT": 20
+    },
+    "T3 LUNAR STONE": {
+        "T2 LUNAR STONE": 25
+    },
+    "T2 LUNAR STONE": {
+        "T1 LUNAR STONE": 20
+    },
+    "T1 LUNAR STONE": {
+        "T0 LUNAR STONE FRAGMENT": 20
+    },
+    "T4 LIGHT OF EGGENDIL": {
+        "T3 LIGHT OF EGGENDIL": 10,
+        "T4 PHOENIX FEATHER": 4
+    },
+    "T3 LIGHT OF EGGENDIL": {
+        "T2 LIGHT OF EGGENDIL": 7,
+        "T3 PHOENIX FEATHER": 4 
+    },
+    "T2 LIGHT OF EGGENDIL": {
+        "T1 LIGHT OF EGGENDIL": 5,
+        "T3 TAU CETI GEODE": 1
+    },
+    "T4 BOOK OF BASAN": {
+        "T3 BOOK OF BASAN": 12,
+        "T4 LIGHT OF EGGENDIL": 1
+    },
+    "T3 BOOK OF BASAN": {
+        "T2 BOOK OF BASAN": 10,
+        "T4 THE CHALICE": 3
+    },
+    "T2 BOOK OF BASAN": {
+        "T1 BOOK OF BASAN": 6,
+        "T3 GOLD METEORITE": 4
+    },
+    "T4 TACHYON DEFLECTOR": {
+        "T3 TACHYON DEFLECTOR": 12,
+        "T4 SHIP IN A BOTTLE": 4
+    },
+    "T3 TACHYON DEFLECTOR": {
+        "T2 TACHYON DEFLECTOR": 10,
+        "T4 QUANTUM METRONOME": 1
+    },
+    "T2 TACHYON DEFLECTOR": {
+        "T1 TACHYON DEFLECTOR": 6,
+        "T2 SHIP IN A BOTTLE": 2
+    },
+    "T4 SHIP IN A BOTTLE": {
+        "T3 SHIP IN A BOTTLE": 12,
+        "T3 BOOK OF BASAN": 2
+    },
+    "T3 SHIP IN A BOTTLE": {
+        "T2 SHIP IN A BOTTLE": 9,
+        "T3 SOLAR TITANIUM": 3
+    },
+    "T2 SHIP IN A BOTTLE": {
+        "T1 SHIP IN A BOTTLE": 6,
+        "T4 DEMETERS NECKLACE": 2
+    },
+    "T4 TITANIUM ACTUATOR": {
+        "T3 TITANIUM ACTUATOR": 8,
+        "T4 QUANTUM METRONOME": 3
+    },
+    "T3 TITANIUM ACTUATOR": {
+        "T2 TITANIUM ACTUATOR": 6,
+        "T3 SOLAR TITANIUM": 3
+    },
+    "T2 TITANIUM ACTUATOR": {
+        "T1 TITANIUM ACTUATOR": 4,
+        "T2 SOLAR TITANIUM": 4
+    },
+    "T4 DILITHIUM MONOCLE": {
+        "T3 DILITHIUM MONOCLE": 10,
+        "T4 MERCURYS LENS": 2
+    },
+    "T3 DILITHIUM MONOCLE": {
+        "T2 DILITHIUM MONOCLE": 8,
+        "T3 SOLAR TITANIUM": 2
+    },
+    "T2 DILITHIUM MONOCLE": {
+        "T1 DILITHIUM MONOCLE": 5,
+        "T1 TITANIUM ACTUATOR": 1
+    },
+    "T4 QUANTUM METRONOME": {
+        "T3 QUANTUM METRONOME": 9,
+        "T3 TAU CETI GEODE": 4
+    },
+    "T3 QUANTUM METRONOME": {
+        "T2 QUANTUM METRONOME": 7,
+        "T3 MERCURYS LENS": 4
+    },
+    "T2 QUANTUM METRONOME": {
+        "T1 QUANTUM METRONOME": 5,
+        "T1 TITANIUM ACTUATOR": 2
+    },
+    "T4 PHOENIX FEATHER": {
+        "T3 PHOENIX FEATHER": 12,
+        "T3 BOOK OF BASAN": 1
+    },
+    "T3 PHOENIX FEATHER": {
+        "T2 PHOENIX FEATHER": 10,
+        "T1 BOOK OF BASAN": 2
+    },
+    "T2 PHOENIX FEATHER": {
+        "T1 PHOENIX FEATHER": 6,
+        "T2 TAU CETI GEODE": 1
+    },
+    "T4 THE CHALICE": {
+        "T3 THE CHALICE": 8,
+        "T4 BEAK OF MIDAS": 2
+    },
+    "T3 THE CHALICE": {
+        "T2 THE CHALICE": 6,
+        "T2 TAU CETI GEODE": 4
+    },
+    "T2 THE CHALICE": {
+        "T1 THE CHALICE": 4,
+        "T2 GOLD METEORITE": 1
+    },
+    "T4 INTERSTELLAR COMPASS": {
+        "T3 INTERSTELLAR COMPASS": 10,
+        "T3 TAU CETI GEODE": 4
+    },
+    "T3 INTERSTELLAR COMPASS": {
+        "T2 INTERSTELLAR COMPASS": 8,
+        "T2 SOLAR TITANIUM": 4
+    },
+    "T2 INTERSTELLAR COMPASS": {
+        "T1 INTERSTELLAR COMPASS": 6
+    },
+    "T4 CARVED RAINSTICK": {
+        "T3 CARVED RAINSTICK": 9,
+        "T3 TAU CETI GEODE": 2
+    },
+    "T3 CARVED RAINSTICK": {
+        "T2 CARVED RAINSTICK": 7,
+        "T3 BEAK OF MIDAS": 1
+    },
+    "T2 CARVED RAINSTICK": {
+        "T1 CARVED RAINSTICK": 5,
+        "T1 ORNATE GUSSET": 1
+    },
+    "T4 BEAK OF MIDAS": {
+        "T3 BEAK OF MIDAS": 6,
+        "T3 GOLD METEORITE": 3
+    },
+    "T3 BEAK OF MIDAS": {
+        "T2 BEAK OF MIDAS": 5,
+        "T2 TAU CETI GEODE": 1
+    },
+    "T2 BEAK OF MIDAS": {
+        "T1 BEAK OF MIDAS": 4
+    },
+    "T4 MERCURYS LENS": {
+        "T3 MERCURYS LENS": 10,
+        "T3 SOLAR TITANIUM": 6
+    },
+    "T3 MERCURYS LENS": {
+        "T2 MERCURYS LENS": 8,
+        "T2 TAU CETI GEODE": 2
+    },
+    "T2 MERCURYS LENS": {
+        "T1 MERCURYS LENS": 6
+    },
+    "T4 NEODYMIUM MEDALLION": {
+        "T3 NEODYMIUM MEDALLION": 6,
+        "T3 INTERSTELLAR COMPASS": 2
+    },
+    "T3 NEODYMIUM MEDALLION": {
+        "T2 NEODYMIUM MEDALLION": 5,
+        "T2 TAU CETI GEODE": 1
+    },
+    "T2 NEODYMIUM MEDALLION": {
+        "T1 NEODYMIUM MEDALLION": 4
+    },
+    "T4 ORNATE GUSSET": {
+        "T3 ORNATE GUSSET": 8,
+        "T3 GOLD METEORITE": 3
+    },
+    "T3 ORNATE GUSSET": {
+        "T2 ORNATE GUSSET": 6,
+        "T2 MERCURYS LENS": 2
+    },
+    "T2 ORNATE GUSSET": {
+        "T1 ORNATE GUSSET": 5
+    },
+    "T4 TUNGSTEN ANKH": {
+        "T3 TUNGSTEN ANKH": 8,
+        "T3 GOLD METEORITES": 4
+    },
+    "T3 TUNGSTEN ANKH": {
+        "T2 TUNGSTEN ANKH": 7,
+        "T2 SOLAR TITANIUM": 2
+    },
+    "T2 TUNGSTEN ANKH": {
+        "T1 TUNGSTEN ANKH": 6
+    },
+    "T4 AURELIAN BROOCH": {
+        "T3 AURELIAN BROOCH": 10,
+        "T3 GOLD METEORITE": 2
+    },
+    "T3 AURELIAN BROOCH": {
+        "T2 AURELIAN BROOCH": 7,
+        "T3 DEMETERS NECKLACE": 2
+    },
+    "T2 AURELIAN BROOCH": {
+        "T1 AURELIAN BROOCH": 5
+    },
+    "T4 VIAL MARTIAN DUST": {
+        "T3 VIAL MARTIAN DUST": 8,
+        "T3 TAU CETI GEODE": 1
+    },
+    "T3 VIAL MARTIAN DUST": {
+        "T2 VIAL MARTIAN DUST": 7,
+        "T2 SOLAR TITANIUM": 2
+    },
+    "T2 VIAL MARTIAN DUST": {
+        "T1 VIAL MARTIAN DUST": 5
+    },
+    "T4 DEMETERS NECKLACE": {
+        "T3 DEMETERS NECKLACE": 6,
+        "T3 GOLD METEORITE": 1
+    },
+    "T3 DEMETERS NECKLACE": {
+        "T2 DEMETERS NECKLACE": 5,
+        "T1 THE CHALICE": 2
+    },
+    "T2 DEMETERS NECKLACE": {
+        "T1 DEMETERS NECKLACE": 3
+    },
+    "T4 LUNAR TOTEM": {
+        "T3 LUNAR TOTEM": 6,
+        "T2 SOLAR TITANIUM": 1
+    },
+    "T3 LUNAR TOTEM": {
+        "T2 LUNAR TOTEM": 6
+    },
+    "T2 LUNAR TOTEM": {
+        "T1 LUNAR TOTEM": 3
+    },
+    "T4 PUZZLE CUBE": {
+        "T3 PUZZLE CUBE": 10,
+        "T3 GOLD METEORITE": 2
+    },
+    "T3 PUZZLE CUBE": {
+        "T2 PUZZLE CUBE": 7,
+        "T1 ORNATE GUSSET": 2
+    },
+    "T2 PUZZLE CUBE": {
+        "T1 PUZZLE CUBE": 3
+    }
+}
