@@ -12,18 +12,40 @@ import asyncio
 import numpy as np
 import pandas as pd
 from decimal import Decimal
-import concurrent.futures
+import sympy as sym
 import decimal
 import base64
 import json
+
+from multiprocessing import Process
 
 from orbit_animations import animate
 from black_pearl import search, plunder
 import ei_inventory_manager as eim
 
-def activate_bot():
+def check_folders() -> str: # this is in case anyone actually wants to use this bot.
+    with open('bot_data/directories.txt', 'r') as f:
+        directories = [direc.split('\n')[0] for direc in f.readlines()]
 
-    load_dotenv('C://Desktop//Discord Bot//keys.env')
+    for dir in directories:
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
+            print(f'created directory {dir}')
+        else:
+            print(f'found {dir}')
+    
+    print('a music folder path will have to be specified manually in the code as your file structure will be different from mine.')    
+
+    current_directory = os.getcwd()
+    return current_directory
+
+def activate_bot(c_dir: str):
+
+    #################
+    ##### SETUP #####
+    #################
+        
+    load_dotenv('keys.env')
     fernet = Fernet(os.getenv('ENCRYPTIONKEY'))
 
     client = commands.Bot(command_prefix='.', intents = discord.Intents.all())
@@ -31,6 +53,8 @@ def activate_bot():
 
     decimal.getcontext().prec=60
 
+    # for music
+    m_dir = 'C:\\Desktop\\Ad free music for when AdBlock fails\\'
     queues = {}
     songs = []
     max_duplicate_iterations = 12
@@ -59,17 +83,16 @@ def activate_bot():
         channel_general = client.get_channel(924502625590857768)
         await channel_general.send(str(member) + " has decided that he could not take it any more")
 
-    @client.event # floppa
+    @client.event # floppa and wrong prefix
     async def on_message(message):
         if "floppa" in message.content.lower() or "secretbigkitty" in message.content.lower():
-            image = discord.File("C://Desktop//Discord Bot//bot_data//Bigfloppa.png")
-            await message.channel.send(file=image)
-        await client.process_commands(message)
+            if os.path.isfile('bot_data/bot_images/Bigfloppa.png'):
+                image = discord.File("bot_data/bot_images/Bigfloppa.png")
+                await message.channel.send(file=image)
 
-    @client.event # wrong prefix
-    async def on_message(message):
         if "/help" in message.content.lower() or "!help" in message.content.lower():
             await message.channel.send('This bots prefix is "."\nTry using ".help"', reference=message)
+
         await client.process_commands(message)
 
     @client.event
@@ -172,7 +195,12 @@ def activate_bot():
             ('.sub', 'Subtracts 2 numbers'),
             ('.mult', 'Multiplies 2 numbers'),
             ('.div', 'Divides 2 numbers'),
-            ('.exp', 'Exponentiates a base by exponenet')
+            ('.exp', 'Exponentiates a base by exponenet'),
+            ('.ln', 'Returns the natural log of a number'),
+            ('.deriv','Calculate a derivative w.r.t x/y/z of f(x,y,z)'),
+            ('.integ','Calculate the antiderivative of a function of x'),
+            ('NOTE 1', 'For the above 2, type e^x as exp(x)'),
+            ('NOTE 2', 'For function input, use X and not * because discord issues')
         ]
 
         for name, value in commands_list:
@@ -349,14 +377,13 @@ def activate_bot():
 
     @client.command()
     async def songlist(ctx, folder):
-        base_directory = 'C:\\Desktop\\Ad free music for when AdBlock fails\\'
         available = ['regular', 'ost', 'soundtrack', 'classical', 'christmas']
         if folder not in available:
             await ctx.send(f'The music folder {folder} does not exist. Try another one')
             return
         folder_name = ['Every song', 'Game OST', 'Movie and Show themes', 'Classical', 'Christmas'][available.index(folder)]
         list = ['regular', 'game OST', 'soundtrack', 'classical', 'christmas'][available.index(folder)]
-        directory = base_directory + folder_name + '\\'
+        directory = m_dir + folder_name + '\\'
 
         song_names = os.listdir(directory)
         with open("C://Desktop//Discord Bot//bot_data//music_files//song list.txt", 'w', encoding="utf-8") as p:
@@ -385,14 +412,13 @@ def activate_bot():
             await ctx.send('You need to give some keywords to search with')
             return
         ##### get a list of every song #####
-        directory = 'C:\\Desktop\\Ad free music for when AdBlock fails\\'
         directories = []
-        for path in os.listdir(directory):
+        for path in os.listdir(m_dir):
             if '.' not in path and 'visible' not in path:
                 directories.append(path)
         songlist = []
         for path in directories:
-            songlist += [path + '\\' + song for song in os.listdir(directory + path)]
+            songlist += [path + '\\' + song for song in os.listdir(m_dir + path)]
         
         ##### get all the keywords #####
         keywords = []
@@ -425,7 +451,7 @@ def activate_bot():
             voice = await voice_channel.connect()
 
         if voice_client and voice_client.is_playing():
-            source = FFmpegPCMAudio(directory + str(audio_name))
+            source = FFmpegPCMAudio(m_dir + str(audio_name))
             songs.append(audio_name)
             guild_id = ctx.guild.id
 
@@ -437,7 +463,7 @@ def activate_bot():
 
         else:
             voice = ctx.guild.voice_client
-            source = FFmpegPCMAudio(directory + str(audio_name))
+            source = FFmpegPCMAudio(m_dir + str(audio_name))
             try:
                 player = voice.play(source, after=lambda e, gid=ctx.guild.id: check_queue(ctx, gid))
                 if player:
@@ -458,13 +484,12 @@ def activate_bot():
             await ctx.send('missing arguments: <folder> optional: <number of random songs>')
             return
         
-        base_directory = 'C:\\Desktop\\Ad free music for when AdBlock fails\\'
         available = ['regular', 'ost', 'soundtrack', 'classical', 'christmas']
         if folder not in available:
             await ctx.send(f'The music folder {folder} does not exist. Try another one')
             return
         folder_name = ['Every song', 'Game OST', 'Movie and Show themes', 'Classical', 'Christmas'][available.index(folder)]
-        directory = base_directory + folder_name + '\\'
+        directory = m_dir + folder_name + '\\'
 
         voice_state = ctx.author.voice
         if voice_state is None:
@@ -538,11 +563,6 @@ def activate_bot():
                 ctx.bot.loop.create_task(disconnect_after_playing(ctx))
         else:
             ctx.bot.loop.create_task(disconnect_after_playing(ctx))
-
-    def update_recently_played(recently_played, new_song):
-        recently_played = np.roll(recently_played, -1)
-        recently_played[-1] = new_song
-        return recently_played
 
     async def disconnect_after_playing(ctx):
         await asyncio.sleep(10)
@@ -691,6 +711,37 @@ def activate_bot():
             return
         await ctx.send(f'probability of {k}/{n} is {100 - np.round(100*binom.cdf(int(k) - 1, int(n), 1/int(p)), 5)}')
     
+    @client.command()
+    async def deriv(ctx, *args):
+        if len(args) <= 1:
+            await ctx.send('.deriv <w.r.t x/y/z> <funtion of x> (note write e^x as exp(x))')
+            return
+        x, y, z = sym.symbols('x y z')
+        w_r_t = args[0]
+        expression = ' '.join(args[1:])
+        replaced = "*".join(str(expression).split("X"))
+
+        derivative = sym.diff(replaced, w_r_t) # w_r_t
+        double_filt = "^".join(str(derivative).split("**"))
+        single_filt = "".join(str(double_filt).split("*"))
+        await ctx.send(f'd/d{w_r_t} is: {single_filt}')
+
+    @client.command()
+    async def integ(ctx, *args):
+        if len(args) == 0:
+            await ctx.send('.integ <funtion of x> (note write e^x as exp(x))')
+            return
+
+        x, y = sym.symbols('x y')
+        expression = ' '.join(args)
+        replaced = "*".join(str(expression).split("X"))
+
+        integral = sym.integrate(replaced, x)
+        double_filt = "^".join(str(integral).split("**"))
+        single_filt = "".join(str(double_filt).split("*"))
+        #print(str(derivative))
+        await ctx.send(f'integral of y(x) is: {single_filt} + C')
+
     ####################
     ##### Graphing #####
     ####################
@@ -799,6 +850,7 @@ def activate_bot():
         future = asyncio.ensure_future(pltorbit_thread(ctx, *args))
         await future
 
+
     ####################
     ##### PIRATING #####
     ####################
@@ -810,7 +862,7 @@ def activate_bot():
             return
         else:
             #print(f'searching for {" ".join(args)}')
-            await ctx.send('Working...')
+            message = await ctx.send('Working...')
             search_results = search(' '.join(args), 1)
 
             urls = []
@@ -852,7 +904,7 @@ def activate_bot():
             for index, result in enumerate(search_results.results, start=1):
                 embed.add_field(name=f'{index}. {titles[index-1]}', value=f'{authors[index-1]} --- {durations[index-1]} --- {publish_dates[index-1]}', inline=False)
 
-            await ctx.channel.purge(limit=1)
+            await message.delete()
             await ctx.send(embed=embed)
             await ctx.send('ready to download a selection or search again')
 
@@ -1093,7 +1145,7 @@ def activate_bot():
     
     @client.command()
     async def guide(ctx):
-        image = discord.File("C://Desktop//Discord Bot//bot_data//guide.png")
+        image = discord.File("bot_data/bot_images/guide.png")
         await ctx.send(file=image)
 
     @client.command()
@@ -1177,7 +1229,8 @@ def activate_bot():
     client.run(os.getenv('BOTTOKEN'))
 
 if __name__ == "__main__":
-    activate_bot()
+    c_dir = check_folders()
+    activate_bot(c_dir)
 
 # see that can be done with this: https://replit.com/@Brosssh/NEW-LLC-CALCULATOR#main.py
 # https://github.com/DavidArthurCole/EggLedger/releases
