@@ -127,7 +127,7 @@ def activate_bot(c_dir: str):
         await client.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name="for commands"))
         print("Amelia is down to clown!")
         print("------------------------")
-        client.loop.create_task(egg_updater())
+        #client.loop.create_task(egg_updater())
 
     @client.event
     async def on_member_join(member):
@@ -452,7 +452,7 @@ def activate_bot(c_dir: str):
         current_date_str = date.today().strftime('%Y-%m-%d')
         current_time_str = datetime.now().strftime('%H:%M:%S')
         content = f'Here is the {list} song list as of {current_date_str}, {current_time_str}'
-        await ctx.send(file = discord.File("C:/Desktop/Discord Bot/bot_data/music_files/song list.txt"), content = content)
+        await ctx.send(file = discord.File(f"{c_dir}/bot_data/music_files/song list.txt"), content = content)
         os.remove(f"{c_dir}/bot_data/music_files/song list.txt")
 
     @client.command(pass_content = True)
@@ -1215,8 +1215,14 @@ def activate_bot(c_dir: str):
         else:
             with open(f'{c_dir}/bot_data/egg_inc_data/archives/{user}_history.json', 'r') as f:
                 history = json.load(f)
-                l = len(history)
-                interval = 1 if l <= 20 else 2**np.ceil(np.log2(l/20))
+                dates = [date for date in history]
+                date_format = "%Y-%m-%d"
+                a = datetime.strptime(dates[0], date_format)
+                b = datetime.strptime(dates[-1], date_format)
+                delta = b - a
+                l = delta.days
+                interval = 1 if l <= 20 else int(2**np.ceil(np.log2(l/20)))
+                
             artifact = (' '.join(args)).upper()
             if eim.check_valid_artifact(artifact):
                 x = [date for date in history]
@@ -1228,7 +1234,7 @@ def activate_bot(c_dir: str):
                 plt.title(f"{user}'s {artifact} history")
                 #plt.xlabel('Dates')
                 plt.ylabel('Quantity')
-                plt.xticks(rotation=40)
+                plt.xticks(rotation=40, ha="right")
                 plt.grid(which='major', color='#DDDDDD', linewidth=0.8)
                 #plt.grid(which='minor', color='#EEEEEE', linewidth=0.5)
                 #plt.minorticks_on()
