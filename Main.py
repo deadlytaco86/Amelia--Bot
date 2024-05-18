@@ -16,27 +16,86 @@ import sympy as sym
 import decimal
 import base64
 import json
+import sys
 
-from multiprocessing import Process
+import logging
+from colorama import Fore, Style, init
 
 from orbit_animations import animate
 from black_pearl import search, plunder
 import ei_inventory_manager as eim
 
-def check_folders() -> str: # this is in case anyone actually wants to use this bot.
-    with open('bot_data/directories.txt', 'r') as f:
-        directories = [direc.split('\n')[0] for direc in f.readlines()]
+init(autoreset=True)
+class ColoredFormatter(logging.Formatter):
+    COLORS = {
+        logging.DEBUG: Fore.BLUE,
+        logging.INFO: Fore.GREEN,
+        logging.WARNING: Fore.YELLOW,
+        logging.ERROR: Fore.RED,
+        logging.CRITICAL: Fore.MAGENTA
+    }
 
-    for dir in directories:
-        if not os.path.isdir(dir):
-            os.mkdir(dir)
-            print(f'created directory {dir}')
-        else:
-            print(f'found {dir}')
+    def format(self, record):
+        level_color = self.COLORS.get(record.levelno, Fore.WHITE)
+        record.levelname = f"{level_color}{record.levelname}{Style.RESET_ALL}"
+        return super().format(record)
     
-    print('a music folder path will have to be specified manually in the code as your file structure will be different from mine.')    
+def check_folders() -> str:
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    formatter = ColoredFormatter('%(levelname)s: %(asctime)s:    %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
     current_directory = os.getcwd()
+    with open(f'{current_directory}/bot_data/directories.txt', 'r') as f:
+        directories = [direc.split('\n')[0] for direc in f.readlines()]
+
+    # directories that can be made
+    for dir in directories:
+        if not os.path.isdir(f'{current_directory}/{dir}'):
+            os.mkdir(dir)
+            logger.info(f'created directory {dir}')
+        else:
+            logger.info(f'found {dir}')
+
+    # files that are needed for smooth operation
+    if os.path.isfile(f'{current_directory}/orbit_animations.py'):
+        logger.info('found orbit_animations.py')
+    else:
+        logger.warning('did not find orbit_animations.py')
+
+    if os.path.isfile(f'{current_directory}/black_pearl.py'):
+        logger.info('found black_pearl.py')
+    else:
+        logger.warning('did not find black_pearl.py')
+
+    if os.path.isfile(f'{current_directory}/ei_pb2.py'):
+        logger.info('found ei_pb2.py')
+    else:
+        logger.warning('did not find ei_pb2.py')
+
+    if os.path.isfile(f'{current_directory}/ei_inventory_manager.py'):
+        logger.info('found ei_inventory_manager.py')
+    else:
+        logger.warning('did not find ei_inventory_manager.py')
+
+    if os.path.isfile(f'{current_directory}/keys.env'):
+        logger.info('found keys.env')
+    else:
+        logger.error('did not find keys.env without which the bot cannot activate')
+        logger.info('keys.env has been created, please fill in the value for BOTTOKEN')
+        with open('keys.env', 'w') as f:
+            f.write("BOTTOKEN = ''\n")
+            new_key = (str(Fernet.generate_key()).split("'"))[1]
+            f.write(f"ENCRYPTIONKEY = '{new_key}'")
+        return 1
+
+    logger.warning('a music folder path will have to be specified manually in the code as your file structure will be different from mine.')
+    logger.removeHandler(console_handler)
+    console_handler.close()
     return current_directory
 
 def activate_bot(c_dir: str):
@@ -68,8 +127,7 @@ def activate_bot(c_dir: str):
         await client.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name="for commands"))
         print("Amelia is down to clown!")
         print("------------------------")
-        #channel_general = client.get_channel(924502625590857768)
-        #await channel_general.send("Good morning, I am back online")
+        client.loop.create_task(egg_updater())
 
     @client.event
     async def on_member_join(member):
@@ -86,8 +144,8 @@ def activate_bot(c_dir: str):
     @client.event # floppa and wrong prefix
     async def on_message(message):
         if "floppa" in message.content.lower() or "secretbigkitty" in message.content.lower():
-            if os.path.isfile('bot_data/bot_images/Bigfloppa.png'):
-                image = discord.File("bot_data/bot_images/Bigfloppa.png")
+            if os.path.isfile(f'{c_dir}/bot_data/bot_images/Bigfloppa.png'):
+                image = discord.File(f"{c_dir}/bot_data/bot_images/Bigfloppa.png")
                 await message.channel.send(file=image)
 
         if "/help" in message.content.lower() or "!help" in message.content.lower():
@@ -386,7 +444,7 @@ def activate_bot(c_dir: str):
         directory = m_dir + folder_name + '\\'
 
         song_names = os.listdir(directory)
-        with open("C://Desktop//Discord Bot//bot_data//music_files//song list.txt", 'w', encoding="utf-8") as p:
+        with open(f"{c_dir}/bot_data/music_files/song list.txt", 'w', encoding="utf-8") as p:
             for song in song_names:
                 if song.endswith('.mp3') and song != "test1.mp3" and song != "test2.mp3":
                     p.write(song + "\n")
@@ -394,8 +452,8 @@ def activate_bot(c_dir: str):
         current_date_str = date.today().strftime('%Y-%m-%d')
         current_time_str = datetime.now().strftime('%H:%M:%S')
         content = f'Here is the {list} song list as of {current_date_str}, {current_time_str}'
-        await ctx.send(file = discord.File("C://Desktop//Discord Bot//bot_data//music_files//song list.txt"), content = content)
-        os.remove("C://Desktop//Discord Bot//bot_data//music_files//song list.txt")
+        await ctx.send(file = discord.File("C:/Desktop/Discord Bot/bot_data/music_files/song list.txt"), content = content)
+        os.remove(f"{c_dir}/bot_data/music_files/song list.txt")
 
     @client.command(pass_content = True)
     async def join(ctx):
@@ -768,9 +826,9 @@ def activate_bot(c_dir: str):
                 plt.title("Your polynomial Graph")
                 plt.xlabel("X axis")
                 plt.ylabel("Y axis")
-                plt.savefig("C://Desktop//Discord Bot//bot_data//graph_data//graph.png")
+                plt.savefig(f"{c_dir}/bot_data/graph_data/graph.png")
                 plt.close()
-                image = discord.File("C://Desktop//Discord Bot//bot_data//graph_data//graph.png")
+                image = discord.File(f"{c_dir}/bot_data/graph_data/graph.png")
                 await ctx.send(file=image)
             except:
                 await ctx.send('Could not make the graph. Please input only numbers.')
@@ -789,9 +847,9 @@ def activate_bot(c_dir: str):
             if attachment.content_type.startswith("text/plain"): 
                 file_contents = await attachment.read()
                 file_contents = file_contents.decode("utf-8")
-                with open('C://Desktop//Discord Bot//bot_data//graph_data//txt_data.txt','w') as p:
+                with open(f'{c_dir}/bot_data/graph_data/txt_data.txt','w') as p:
                     p.write(file_contents)
-                data = np.loadtxt('C://Desktop//Discord Bot//bot_data//graph_data//txt_data.txt')
+                data = np.loadtxt(f'{c_dir}/bot_data/graph_data/txt_data.txt')
 
                 if len(data.shape) == 1:
                     if params == 3:
@@ -818,9 +876,9 @@ def activate_bot(c_dir: str):
                 plt.title(args[0])
                 plt.xlabel(args[1])
                 plt.ylabel(args[2])
-                plt.savefig("C://Desktop//Discord Bot//bot_data//graph_data//graph.png")
+                plt.savefig(f"{c_dir}/bot_data/graph_data/graph.png")
                 plt.close()
-                image = discord.File("C://Desktop//Discord Bot//bot_data//graph_data//graph.png")
+                image = discord.File(f"{c_dir}/bot_data/graph_data/graph.png")
                 await ctx.send(file=image)
         
             else:
@@ -838,7 +896,7 @@ def activate_bot(c_dir: str):
             try:
                 loop = asyncio.get_event_loop()
                 await loop.run_in_executor(None, animate, float(args[0]), float(args[1]), float(args[2]))
-                image = discord.File('C://Desktop//Discord Bot//bot_data//graph_data//Orbit Animation.gif')
+                image = discord.File(f'{c_dir}/bot_data/graph_data/Orbit Animation.gif')
                 await message.delete()
                 await ctx.send(file=image)
             except Exception as e:
@@ -891,7 +949,7 @@ def activate_bot(c_dir: str):
 
                 #print(f'{index}. {title} --- {author} --- {duration} --- {publish_date}')
 
-            with open("C://Desktop//Discord Bot//bot_data//music_files//search_results.txt", 'w', encoding="utf-8") as p:
+            with open(f"{c_dir}/bot_data/music_files/search_results.txt", 'w', encoding="utf-8") as p:
                 for id in urls:
                     p.write(id + "\n")
 
@@ -919,7 +977,7 @@ def activate_bot(c_dir: str):
             await ctx.send('selection must match one of the numbers of the search result')
             return
         
-        with open("C://Desktop//Discord Bot//bot_data//music_files//search_results.txt", 'r') as p:
+        with open(f"{c_dir}/bot_data/music_files/search_results.txt", 'r') as p:
             ids = p.readlines()
             try:
                 if arg2 == None or arg2 not in ['regular', 'ost', 'soundtrack', 'classical', 'christmas']:
@@ -946,7 +1004,7 @@ def activate_bot(c_dir: str):
             await ctx.message.delete()
             await ctx.send('there should be 16 numbers after the EI. Make sure you have all of them')
             return
-        f = open('C://Desktop//Discord Bot//bot_data//egg_inc_data//ei_registered_ids.json')
+        f = open(f'{c_dir}/bot_data/egg_inc_data/ei_registered_ids.json')
         ids = json.load(f)
         user = str(ctx.author)
         if user in ids:
@@ -958,7 +1016,7 @@ def activate_bot(c_dir: str):
                 encrypted_id_base64 = base64.b64encode(encrypted_id).decode()
                 ids[user] = encrypted_id_base64
                 json_object = json.dumps(ids, indent=4)
-                with open('C://Desktop//Discord Bot//bot_data//egg_inc_data//ei_registered_ids.json', 'w') as writer:
+                with open(f'{c_dir}/bot_data/egg_inc_data/ei_registered_ids.json', 'w') as writer:
                     writer.write(json_object)
                 await ctx.message.delete()
                 await ctx.send('your egg inc id is now registered with the bot!')
@@ -1021,8 +1079,8 @@ def activate_bot(c_dir: str):
     @client.command()
     async def view_raw_inventory(ctx):
         user = str(ctx.author)
-        if os.path.isfile(f'C://Desktop//Discord Bot//bot_data//egg_inc_data//{user}_all artifacts.json'):
-            await ctx.send(file = discord.File(f'C://Desktop//Discord Bot//bot_data//egg_inc_data//{user}_all artifacts.json'))
+        if os.path.isfile(f'{c_dir}/bot_data/egg_inc_data/{user}_all artifacts.json'):
+            await ctx.send(file = discord.File(f'{c_dir}/bot_data/egg_inc_data/{user}_all artifacts.json'))
         else:
             await ctx.send('no artifact record exists for you yet. please run ".update_egg_inc" to create one')
         
@@ -1145,18 +1203,20 @@ def activate_bot(c_dir: str):
     
     @client.command()
     async def guide(ctx):
-        image = discord.File("bot_data/bot_images/guide.png")
+        image = discord.File(f"{c_dir}/bot_data/bot_images/guide.png")
         await ctx.send(file=image)
 
     @client.command()
     async def history(ctx, *args):
         user = str(ctx.author)
-        if not os.path.isfile(f'C://Desktop//Discord Bot//bot_data//egg_inc_data//archives//{user}_history.json'):
+        if not os.path.isfile(f'{c_dir}/bot_data/egg_inc_data/archives/{user}_history.json'):
             await ctx.send('you do not have any artifact history, you can create onw with .archive after every inventory update')
             return
         else:
-            with open(f'C://Desktop//Discord Bot//bot_data//egg_inc_data//archives//{user}_history.json', 'r') as f:
+            with open(f'{c_dir}/bot_data/egg_inc_data/archives/{user}_history.json', 'r') as f:
                 history = json.load(f)
+                l = len(history)
+                interval = 1 if l <= 20 else 2**np.ceil(np.log2(l/20))
             artifact = (' '.join(args)).upper()
             if eim.check_valid_artifact(artifact):
                 x = [date for date in history]
@@ -1173,14 +1233,14 @@ def activate_bot(c_dir: str):
                 #plt.grid(which='minor', color='#EEEEEE', linewidth=0.5)
                 #plt.minorticks_on()
                 plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-                plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=3))
+                plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=interval))
                 plt.tight_layout(pad=1.5)
-                plt.savefig(f"C://Desktop//Discord Bot//bot_data//egg_inc_data//{user}_history.png") #  bbox_inches="tight"
+                plt.savefig(f"{c_dir}/bot_data/egg_inc_data/{user}_history.png") #  bbox_inches="tight"
                 plt.clf()
 
-                image = discord.File(f"C://Desktop//Discord Bot//bot_data//egg_inc_data//{user}_history.png")
+                image = discord.File(f"{c_dir}/bot_data/egg_inc_data/{user}_history.png")
                 await ctx.send(file=image)
-                os.remove(f"C://Desktop//Discord Bot//bot_data//egg_inc_data//{user}_history.png")
+                os.remove(f"{c_dir}/bot_data/egg_inc_data/{user}_history.png")
             else:
                 await ctx.send(f'{artifact} is not in the archives. Please ensure you are selecting a stone or ingredient and spelling is correct.')
                 return
@@ -1189,7 +1249,7 @@ def activate_bot(c_dir: str):
     async def craftable(ctx, *args):
         send_embed = False
         user = str(ctx.author)
-        if not os.path.isfile(f'C://Desktop//Discord Bot//bot_data//egg_inc_data//{user}_quantity data.json'):
+        if not os.path.isfile(f'{c_dir}/bot_data/egg_inc_data/{user}_quantity data.json'):
             await ctx.send('you do not have an inventory on record. Please run .update_egg_inc to create one.')
             return
         else:
@@ -1200,7 +1260,7 @@ def activate_bot(c_dir: str):
                 await ctx.send('looks like you spelled something wrong')
                 return
 
-            if send_embed:
+            if send_embed: # not currently used
                 embed = discord.Embed(
                     title=f'Crafting a {artifact}',
                     description='Here is what you will DIRECTLY need:',
@@ -1218,9 +1278,32 @@ def activate_bot(c_dir: str):
                     for item in available:
                         f.write(f'you have {available[item]} {item}\n')
 
-                file = discord.File("C://Desktop//Discord Bot//crafting_tree.txt")
+                file = discord.File(f"{c_dir}/crafting_tree.txt")
                 await ctx.send(file=file)
 
+    ########################################
+    ##### things to do every so often ######
+    ########################################
+
+    async def egg_updater():
+        bot_chan = client.get_channel(1022731444025565205)
+        while True:
+            await bot_chan.send("updating all egg inc data...")
+            with open(f'{c_dir}/bot_data/egg_inc_data/ei_registered_ids.json') as f:
+                ids = json.load(f)
+            for user in ids:
+                try:
+                    user_id = fernet.decrypt(base64.b64decode(ids[user])).decode()
+                    eim.get_full_inventory(user, user_id)
+                    eim.sort_by_name(user)
+                    current_date_str = date.today().strftime('%Y-%m-%d')
+                    _ = eim.create_archive_entry(user, current_date_str)
+                    await bot_chan.send(f'updated inventory and archive for {user}')
+                except:
+                    await bot_chan.send(f'could not update info for {user}')
+                await asyncio.sleep(5)
+            await bot_chan.send('all updates finished\nnext general update in 4 hours')
+            await asyncio.sleep(4*60*60)
 
     ####################
     ##### RUN BOT ######
@@ -1230,6 +1313,8 @@ def activate_bot(c_dir: str):
 
 if __name__ == "__main__":
     c_dir = check_folders()
+    if c_dir == 1:
+        sys.exit()
     activate_bot(c_dir)
 
 # see that can be done with this: https://replit.com/@Brosssh/NEW-LLC-CALCULATOR#main.py
