@@ -1,4 +1,5 @@
 from discord.ext.commands import has_permissions, MissingPermissions
+import decimal, asyncio, logging, base64, json, sys
 from discord import FFmpegPCMAudio, member
 from discord.ext import commands
 from cryptography.fernet import Fernet
@@ -8,17 +9,11 @@ import matplotlib.dates as mdates
 from datetime import date, datetime
 from scipy.stats import binom
 import discord, random, os
-import asyncio
 import numpy as np
 import pandas as pd
 from decimal import Decimal
 import sympy as sym
-import decimal
-import base64
-import json
-import sys
 
-import logging
 from colorama import Fore, Style, init
 
 from orbit_animations import animate
@@ -114,6 +109,7 @@ def activate_bot(c_dir: str):
 
     # for music
     m_dir = 'C:\\Desktop\\Ad free music for when AdBlock fails\\'
+    available_folders = ['regular', 'ost', 'soundtrack', 'classical', 'christmas']
     queues = {}
     songs = []
     max_duplicate_iterations = 12
@@ -124,22 +120,24 @@ def activate_bot(c_dir: str):
 
     @client.event
     async def on_ready():
+        global general_channel, bot_channel
         await client.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name="for commands"))
         print("Amelia is down to clown!")
         print("------------------------")
+        guild = discord.utils.get(client.guilds, name="Suzy's Hangout")
+        general_channel = discord.utils.get(guild.channels, name='general')
+        bot_channel = discord.utils.get(guild.channels, name='bot-commands')
         #client.loop.create_task(egg_updater())
 
     @client.event
     async def on_member_join(member):
-        channel_general = client.get_channel(924502625590857768)
         role = discord.utils.get(member.guild.roles, name="citizen")
         await member.add_roles(role)
-        await channel_general.send(str(member) + " has decided to come suffer with us")
+        await general_channel.send(str(member) + " has decided to come suffer with us")
 
     @client.event
     async def on_member_remove(member):
-        channel_general = client.get_channel(924502625590857768)
-        await channel_general.send(str(member) + " has decided that he could not take it any more")
+        await general_channel.send(str(member) + " has decided that he could not take it any more")
 
     @client.event # floppa and wrong prefix
     async def on_message(message):
@@ -435,18 +433,17 @@ def activate_bot(c_dir: str):
 
     @client.command()
     async def songlist(ctx, folder):
-        available = ['regular', 'ost', 'soundtrack', 'classical', 'christmas']
-        if folder not in available:
+        if folder not in available_folders:
             await ctx.send(f'The music folder {folder} does not exist. Try another one')
             return
-        folder_name = ['Every song', 'Game OST', 'Movie and Show themes', 'Classical', 'Christmas'][available.index(folder)]
-        list = ['regular', 'game OST', 'soundtrack', 'classical', 'christmas'][available.index(folder)]
+        folder_name = ['Every song', 'Game OST', 'Movie and Show themes', 'Classical', 'Christmas'][available_folders.index(folder)]
+        list = ['regular', 'game OST', 'soundtrack', 'classical', 'christmas'][available_folders.index(folder)]
         directory = m_dir + folder_name + '\\'
 
         song_names = os.listdir(directory)
         with open(f"{c_dir}/bot_data/music_files/song list.txt", 'w', encoding="utf-8") as p:
             for song in song_names:
-                if song.endswith('.mp3') and song != "test1.mp3" and song != "test2.mp3":
+                if song.endswith('.mp3'):
                     p.write(song + "\n")
 
         current_date_str = date.today().strftime('%Y-%m-%d')
@@ -531,22 +528,16 @@ def activate_bot(c_dir: str):
 
     @client.command(pass_content=True)
     async def play_random(ctx, folder=None, quantity=None):
-        if quantity == None: # do some argument checks
-            quantity = 1
-        else:
-            quantity = int(quantity)
-        if quantity > 40:
-            quantity = 40
-            await ctx.send('to avoid overloading the queue, only 40 songs will be randomly chosen and added to queue at a time')
+        quantity = 1 if quantity == None else max(int(quantity),40)
+        
         if folder == None:
             await ctx.send('missing arguments: <folder> optional: <number of random songs>')
             return
         
-        available = ['regular', 'ost', 'soundtrack', 'classical', 'christmas']
-        if folder not in available:
+        if folder not in available_folders:
             await ctx.send(f'The music folder {folder} does not exist. Try another one')
             return
-        folder_name = ['Every song', 'Game OST', 'Movie and Show themes', 'Classical', 'Christmas'][available.index(folder)]
+        folder_name = ['Every song', 'Game OST', 'Movie and Show themes', 'Classical', 'Christmas'][available_folders.index(folder)]
         directory = m_dir + folder_name + '\\'
 
         voice_state = ctx.author.voice
@@ -719,34 +710,56 @@ def activate_bot(c_dir: str):
     #######################
 
     @client.command()
-    async def mult(ctx, arg1 = None, arg2= None):
-        if arg1 == None or arg2 == None:
-            await ctx.send("You are missing some arguments: <first number> <second number>")
-        else:
-            await ctx.send(Decimal(arg1)*Decimal(arg2)) # ctx.send(float(arg1)*float(arg2))
+    async def mult(ctx, *args):
+        if len(args) < 2:
+            await ctx.send('.mult <num 1> <num 2> ... <num n>')
+            return
+        try:
+            product = Decimal(args[0])
+            for n_arg in args[1:]:
+                product *= Decimal(n_arg)
+            await ctx.send(product)
+        except:
+            await ctx.send('make sure you have only numbers')
 
     @client.command()
-    async def div(ctx, arg1 = None, arg2= None):
-        if arg1 == None or arg2 == None:
-            await ctx.send("You are missing some arguments: <numerator> <denominator>")
-        elif Decimal(arg2) == 0:
-            await ctx.send("Pease don't make me devide by zero")
-        else:
-            await ctx.send(Decimal(arg1)/Decimal(arg2))
+    async def div(ctx, *args):
+        if len(args) < 2:
+            await ctx.send('.div <num 1> <num 2> ... <num n>')
+            return
+        try:
+            quatient = Decimal(args[0])
+            for n_arg in args[1:]:
+                quatient /= Decimal(n_arg)
+            await ctx.send(quatient)
+        except:
+            await ctx.send('make sure you have only numbers')
 
     @client.command()
-    async def add(ctx, arg1 = None, arg2= None):
-        if arg1 == None or arg2 == None:
-            await ctx.send("You are missing some arguments: <first number> <second number>")
-        else:
-            await ctx.send(Decimal(arg1)+Decimal(arg2))
+    async def add(ctx, *args):
+        if len(args) < 2:
+            await ctx.send('.add <num 1> <num 2> ... <num n>')
+            return
+        try:
+            sum = Decimal(args[0])
+            for n_arg in args[1:]:
+                sum += Decimal(n_arg)
+            await ctx.send(sum)
+        except:
+            await ctx.send('make sure you have only numbers')
 
     @client.command()
-    async def sub(ctx, arg1 = None, arg2= None):
-        if arg1 == None or arg2 == None:
-            await ctx.send("You are missing some arguments: <first number> <second number>")
-        else:
-            await ctx.send(Decimal(arg1)-Decimal(arg2))
+    async def sub(ctx, *args):
+        if len(args) < 2:
+            await ctx.send('.sub <num 1> <num 2> ... <num n>')
+            return
+        try:
+            difference = Decimal(args[0])
+            for n_arg in args[1:]:
+                difference -= Decimal(n_arg)
+            await ctx.send(difference)
+        except:
+            await ctx.send('make sure you have only numbers')
 
     @client.command()
     async def exp(ctx, arg1 = None, arg2= None):
@@ -756,16 +769,44 @@ def activate_bot(c_dir: str):
             await ctx.send(Decimal(arg1)**Decimal(arg2))
 
     @client.command()
-    async def ln(ctx, arg1 = None):
-        if arg1 == None:
+    async def log(ctx, base = None, num = None):
+        if base == None or num == None:
             await ctx.send("You are missing an argument: <base> <number>")
+            return
+        if base == 'e':
+            try:
+                await ctx.send(np.log(float(num)))
+                return
+            except:
+                await ctx.send('second argument must be a number')
+                return
+        try:
+            base = float(base)
+            num = float(num)
+        except:
+            await ctx.send('please use only numbers. exception: base e')
+            return
+        if base <= 0 or num <= 0:
+            await ctx.send("please input only positive numbers")
+            return
         else:
-            await ctx.send(np.log(arg1))
+            guess = np.log(num)
+            displacement = 0.9 * guess
+            check = base ** guess
+            for i in range(350):
+                if check > num:
+                    guess -= displacement * 0.9 ** i
+                if check < num:
+                    guess += displacement * 0.9 ** i
+                if check == num:
+                    break
+                check = base ** guess
+            await ctx.send(f'log base {base} of {num} is {guess}')
 
     @client.command()
     async def dice(ctx, n = None, k = None, p = None):
         if n == None or k == None or p == None:
-            await ctx.send("missing arguments")
+            await ctx.send("missing arguments: <n> <k> <1/p>")
             return
         await ctx.send(f'probability of {k}/{n} is {100 - np.round(100*binom.cdf(int(k) - 1, int(n), 1/int(p)), 5)}')
     
@@ -1222,7 +1263,7 @@ def activate_bot(c_dir: str):
                 delta = b - a
                 l = delta.days
                 interval = 1 if l <= 20 else int(2**np.ceil(np.log2(l/20)))
-                
+
             artifact = (' '.join(args)).upper()
             if eim.check_valid_artifact(artifact):
                 x = [date for date in history]
@@ -1292,9 +1333,8 @@ def activate_bot(c_dir: str):
     ########################################
 
     async def egg_updater():
-        bot_chan = client.get_channel(1022731444025565205)
         while True:
-            await bot_chan.send("updating all egg inc data...")
+            await bot_channel.send("updating all egg inc data...")
             with open(f'{c_dir}/bot_data/egg_inc_data/ei_registered_ids.json') as f:
                 ids = json.load(f)
             for user in ids:
@@ -1304,11 +1344,11 @@ def activate_bot(c_dir: str):
                     eim.sort_by_name(user)
                     current_date_str = date.today().strftime('%Y-%m-%d')
                     _ = eim.create_archive_entry(user, current_date_str)
-                    await bot_chan.send(f'updated inventory and archive for {user}')
+                    await bot_channel.send(f'updated inventory and archive for {user}')
                 except:
-                    await bot_chan.send(f'could not update info for {user}')
+                    await bot_channel.send(f'could not update info for {user}')
                 await asyncio.sleep(5)
-            await bot_chan.send('all updates finished\nnext general update in 4 hours')
+            await bot_channel.send('all updates finished\nnext general update in 4 hours')
             await asyncio.sleep(4*60*60)
 
     ####################
@@ -1330,4 +1370,3 @@ if __name__ == "__main__":
 # https://github.com/menno-egginc/eggincdatacollection-docs/blob/main/DataEndpoints.md
 # https://github.com/menno-egginc/egg/tree/main/protobuf
 # https://inicio-multi.netlify.app/
-
