@@ -1,1 +1,13 @@
+All modules needed for the bot are imported.
+
+Next, all artifacts, stones and ingredients are defined as well as all legendary artifact types.
+
+How the bot pulls and sorts artifact data:
+when get_full_inventory() is called the bot will request game data from the API. The inventory is then isolated.
+From there, we will get the artifact key indices. These indices indicate when a new artifact entry begins in the inventory.
+Using the indices, the type, level and quantity as well as rarity are pulled. If an artifact has stones those will be extracted as well.
+The data is then formatted using the following format:
+name : [type, quantity, slotted stones]
+the name encodes the following information: base name of artifact, tier, level and rarity. ex: T4R Tungsten Ankh -> tier 4 rare tungsten ankh.
+This data is saved in a json file.
 
