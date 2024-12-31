@@ -62,10 +62,6 @@ if __name__ == '__main__':
         print(f"Upload Date: {result[3]}")
         print(f"URL: {result[4]}")
         print("-----")
-
-    for index, result in enumerate(results, start=1):
-        print(index)
-
     if len(results) > 0:
         choice = input('enter a number 1-10: ')
         if choice == '0':
