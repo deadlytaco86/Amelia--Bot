@@ -1,8 +1,8 @@
-#Discription
+# Discription
 This discord bot contains the egg inc data api as well as a bunch of other stuff.\
 You will need to hard code the music directory as my file structure will be different to yours.
 
-#Recent Changes
+# Recent Changes
 Switched pirating library of choice from pytube to yt-dlp\
 It is recommended you update the bot to if you want to continue using the music downloading feature.\
 \
