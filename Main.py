@@ -528,7 +528,7 @@ def activate_bot(c_dir: str):
 
     @client.command(pass_content=True)
     async def play_random(ctx, folder=None, quantity=None):
-        quantity = 1 if quantity == None else max(int(quantity),40)
+        quantity = 1 if quantity == None else min(int(quantity),20)
         
         if folder == None:
             await ctx.send('missing arguments: <folder> optional: <number of random songs>')
@@ -960,9 +960,8 @@ def activate_bot(c_dir: str):
             await ctx.send('missing arguments: <search query>')
             return
         else:
-            #print(f'searching for {" ".join(args)}')
             message = await ctx.send('Working...')
-            search_results = search(' '.join(args), 1)
+            results = search(' '.join(args))
 
             urls = []
             titles = []
@@ -970,16 +969,14 @@ def activate_bot(c_dir: str):
             durations = []
             publish_dates = []
 
-            for result in search_results.results:
+            for result in results:
 
-                urls.append(result.video_id)
-                #print(result.thumbnail_url)
+                urls.append(result[4])
+                titles.append(result[0])
+                authors.append(result[2])
+                publish_dates.append(result[3])
 
-                titles.append(result.title)
-                authors.append(result.author)
-                publish_dates.append(str(result.publish_date).split('00')[0])
-
-                length = result.length
+                length = int(result[1])
                 hours = length // 3600
                 buffer_1 = '0' if len(str(hours)) == 1 else ''
                 minutes = (length - hours*3600) // 60
@@ -988,19 +985,16 @@ def activate_bot(c_dir: str):
                 buffer_3 = '0' if len(str(seconds)) == 1 else ''
                 durations.append(f'{buffer_1}{hours}:{buffer_2}{minutes}:{buffer_3}{seconds}')
 
-                #print(f'{index}. {title} --- {author} --- {duration} --- {publish_date}')
-
             with open(f"{c_dir}/bot_data/music_files/search_results.txt", 'w', encoding="utf-8") as p:
-                for id in urls:
-                    p.write(id + "\n")
+                for url in urls:
+                    p.write(url + "\n")
 
             embed = discord.Embed(
                 title='Search results',
                 description='Results from the most recent youtube search:',
                 color=discord.Color.blue()
             )
-
-            for index, result in enumerate(search_results.results, start=1):
+            for index, result in enumerate(results, start=1):
                 embed.add_field(name=f'{index}. {titles[index-1]}', value=f'{authors[index-1]} --- {durations[index-1]} --- {publish_dates[index-1]}', inline=False)
 
             await message.delete()
@@ -1010,7 +1004,7 @@ def activate_bot(c_dir: str):
     @client.command()
     async def download(ctx, arg1 = None, arg2 = None):
         if arg1 == None:
-            await ctx.send('missing arguments: <song number> optional: <folder>')
+            await ctx.send('missing arguments: <song number>, optional: <folder>')
             return
         try:
             selection = int(arg1)
@@ -1019,13 +1013,13 @@ def activate_bot(c_dir: str):
             return
         
         with open(f"{c_dir}/bot_data/music_files/search_results.txt", 'r') as p:
-            ids = p.readlines()
+            urls = p.readlines()
             try:
                 if arg2 == None or arg2 not in ['regular', 'ost', 'soundtrack', 'classical', 'christmas']:
                     await ctx.send('folder not recognized, re-routing to default folder instead')
-                    plunder(str(ids[selection-1]).split('\n')[0])
+                    plunder(str(urls[selection-1]).split('\n')[0])
                 else:
-                    plunder(str(ids[selection-1]).split('\n')[0], arg2)
+                    plunder(str(urls[selection-1]).split('\n')[0], arg2)
                 await ctx.send('Download complete!')
             except:
                 await ctx.send('Something went wrong. Check to make sure you do not already have this item.')
