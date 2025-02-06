@@ -118,16 +118,42 @@ def activate_bot(c_dir: str):
     ##### EVENTS #####
     ##################
 
+    def read_time():
+        local_time = time.localtime()
+        year_seconds = (local_time.tm_year - 1970) * 365 * 24 * 60 * 60
+        day_seconds = local_time.tm_yday * 24 * 60 * 60
+        hour_seconds = local_time.tm_hour * 60 * 60
+        minute_seconds = local_time.tm_min * 60
+        seconds = local_time.tm_sec
+        total_seconds = year_seconds + day_seconds + hour_seconds + minute_seconds + seconds
+        return total_seconds
+    
     @client.event
     async def on_ready():
         global general_channel, bot_channel
         await client.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name="for commands"))
         print("Amelia is down to clown!")
         print("------------------------")
-        guild = discord.utils.get(client.guilds, name="Suzy's Hangout")
+        guild = discord.utils.get(client.guilds, name=" YOUR_GUILD_HERE ")
         general_channel = discord.utils.get(guild.channels, name='general')
         bot_channel = discord.utils.get(guild.channels, name='bot-commands')
-        #client.loop.create_task(egg_updater())
+
+        if not os.path.isfile(f'{c_dir}/bot_data/egg_inc_data/last_update_time.txt'):
+            with open(f'{c_dir}/bot_data/egg_inc_data/last_update_time.txt', 'w+') as f:
+                f.write(f'{read_time()}')
+            print('created last_update_time.txt')
+            client.loop.create_task(egg_updater(False))
+                
+        with open(f'{c_dir}/bot_data/egg_inc_data/last_update_time.txt', 'r') as f:
+            last_update = int(f.readlines()[0])
+
+            elapsed = read_time() - last_update
+            print(f'it has been {elapsed} seconds since last update')
+
+            if elapsed > 4*60*60:
+                client.loop.create_task(egg_updater(False))
+            else:
+                client.loop.create_task(egg_updater(True))
 
     @client.event
     async def on_member_join(member):
@@ -1326,23 +1352,30 @@ def activate_bot(c_dir: str):
     ##### things to do every so often ######
     ########################################
 
-    async def egg_updater():
+    async def egg_updater(skip: bool):
         while True:
-            await bot_channel.send("updating all egg inc data...")
-            with open(f'{c_dir}/bot_data/egg_inc_data/ei_registered_ids.json') as f:
-                ids = json.load(f)
-            for user in ids:
-                try:
-                    user_id = fernet.decrypt(base64.b64decode(ids[user])).decode()
-                    eim.get_full_inventory(user, user_id)
-                    eim.sort_by_name(user)
-                    current_date_str = date.today().strftime('%Y-%m-%d')
-                    _ = eim.create_archive_entry(user, current_date_str)
-                    await bot_channel.send(f'updated inventory and archive for {user}')
-                except:
-                    await bot_channel.send(f'could not update info for {user}')
-                await asyncio.sleep(5)
-            await bot_channel.send('all updates finished\nnext general update in 4 hours')
+            if not skip:
+                await bot_channel.send("updating all egg inc data...")
+                with open(f'{c_dir}/bot_data/egg_inc_data/ei_registered_ids.json') as f:
+                    user_dict = json.load(f)
+                users, ids = zip(*user_dict.items())
+                for i in range(len(users)):
+                    try:
+                        user_id = fernet.decrypt(base64.b64decode(ids[i])).decode()
+                        eim.get_full_inventory(users[i], user_id)
+                        eim.sort_by_name(users[i])
+                        current_date_str = date.today().strftime('%Y-%m-%d')
+                        _ = eim.create_archive_entry(users[i], current_date_str)
+                        await bot_channel.send(f'updated inventory and archive for {users[i]}')
+                    except:
+                        await bot_channel.send(f'could not update info for {users[i]}')
+                    if i != (len(users) - 1):
+                        await asyncio.sleep(5)
+                await bot_channel.send('all updates finished\nnext general update in 4 hours')
+                with open(f'{c_dir}/bot_data/egg_inc_data/last_update_time.txt', 'w') as g:
+                    g.write(f'{read_time()}')
+            else:
+                skip = False
             await asyncio.sleep(4*60*60)
 
     ####################
