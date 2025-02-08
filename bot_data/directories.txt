@@ -1,0 +1,3 @@
+bot_data/music_files
+bot_data/orbit_plots
+bot_data/graph_data
