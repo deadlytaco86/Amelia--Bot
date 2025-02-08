@@ -152,7 +152,7 @@ def activate_bot(c_dir: str):
         await client.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name="for commands"))
         print("Amelia is down to clown!")
         print("------------------------")
-        guild = discord.utils.get(client.guilds, name="Suzy's Hangout")
+        guild = discord.utils.get(client.guilds, name=" YOUR GUILD HERE ")
         general_channel = discord.utils.get(guild.channels, name='general')
         bot_channel = discord.utils.get(guild.channels, name='bot-commands')
 
