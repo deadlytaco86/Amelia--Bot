@@ -36,7 +36,7 @@ def addHelpFields(embed, i):
          ('.integ','Calculate the antiderivative of a function of x'),
          ('NOTE 1', 'For the above 2, type e^x as exp(x) \nFor function input, use X and not * because discord hates stars')],
 
-        [('.pltpoly', 'Plots a polynomial from coefficients (include zeors)'),
+        [('.pltpoly', 'Plots a polynomial from coefficients (include zeros)'),
          ('.plttxt', 'Plots data from an attahced text file with 1-3 columns'),
          ('.pltorbit', 'Creates an animation with given orbital parameters')],
 
@@ -60,6 +60,7 @@ def addHelpFields(embed, i):
          ('.legs', 'Shows you a breakdown of all your legendary artifacts'),
          ('.shiny', '(IN DEV) shows you which shinies you have at a certain tier'),
          ('.guide', 'Brings up a guide on what artifacts to craft and consume'),
+         ('.craft_odds', 'Shows you the odds of you crafting a LEG in the next n crafts'),
          ('.craftable', 'COMING SOON!'),
          ('DISCLAIMER!!!', 'Register your egg id at your own risk. The ids, which get encrypted \nwith the frenet library are stored in a json file on my personal computer.')]
     ]
