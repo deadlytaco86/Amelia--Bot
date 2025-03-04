@@ -1,9 +1,12 @@
 import requests
+import datetime
 import humanize
 import ei_pb2
 import base64
+import time
 import json
 import os
+import re
 
 base_dir = 'C://Desktop//Discord Bot//bot_data//egg_inc_data//'
 
@@ -16,6 +19,13 @@ legendary_types = ["T4L LIGHT OF EGGENDIL", "T4L BOOK OF BASAN", "T4L TACHYON DE
                    "T4L QUANTUM METRONOME", "T4L PHOENIX FEATHER", "T4L THE CHALICE", "T4L INTERSTELLAR COMPASS", "T4L CARVED RAINSTICK", "T4L BEAK OF MIDAS", 
                    "T4L MERCURYS LENS", "T4L NEODYMIUM MEDALLION", "T4L ORNATE GUSSET", "T3L TUNGSTEN ANKH", "T4L TUNGSTEN ANKH", "T4L AURELIAN BROOCH",
                    "T4L VIAL MARTIAN DUST", "T4L DEMETERS NECKLACE", "T4L LUNAR TOTEM", "T4L PUZZLE CUBE"]
+
+legendary_base = {"T4L LIGHT OF EGGENDIL": 1000., "T4L BOOK OF BASAN": 1000., "T4L TACHYON DEFLECTOR": 1200., "T4L SHIP IN A BOTTLE": 1200., 
+                   "T4L TITANIUM ACTUATOR": 1000., "T4L DILITHIUM MONOCLE": 1000., "T4L QUANTUM METRONOME": 1000., "T4L PHOENIX FEATHER": 1000., 
+                   "T4L THE CHALICE": 1000., "T4L INTERSTELLAR COMPASS": 1000., "T4L CARVED RAINSTICK": 1000., "T4L BEAK OF MIDAS": 1500., 
+                   "T4L MERCURYS LENS": 1000., "T4L NEODYMIUM MEDALLION": 1000., "T4L ORNATE GUSSET": 1000., "T3L TUNGSTEN ANKH": 1000., 
+                   "T4L TUNGSTEN ANKH": 1000., "T4L AURELIAN BROOCH": 1000., "T4L VIAL MARTIAN DUST": 1000., "T4L DEMETERS NECKLACE": 1000., 
+                   "T4L LUNAR TOTEM": 1500., "T4L PUZZLE CUBE": 1000.}
 
 ##### FUNCTIONS CALLED BY OTHER FUNCTIONS #####
 
@@ -86,7 +96,7 @@ def make_name(base_name, section, fragment = False, slotted = False, slot_number
         level = str(raw_levels.index((str(section[3+6*slot_number]).split('level: ')[-1]).split('\n')[0]) + 1)
         name = f'T{level} {" ".join(str(base_name).split("_"))}'
         return name
-    
+
 def find_stones(section):
     if len(section) == 17:
         base_name1 = (str(section[8]).split('name: ')[-1]).split('\n')[0]
@@ -110,12 +120,137 @@ def find_stones(section):
         stones = ['failed to identify stones']
     return stones
 
+def get_current_missions(mission_data):
+    mission_times = []
+
+    mission_blocks = re.split(r'status:', mission_data)
+
+    for block in mission_blocks:
+        item = [0,0]
+        attributes = re.findall(r'(\w+):\s*(\w+)', block)
+        for key, value in attributes:
+            if key.lower() == 'start_time_derived':
+                item[0] = int(value)
+            if key.lower() == 'duration_seconds':
+                item[1] = int(value)
+        mission_times.append(item)
+
+    return mission_times[1:]
+
+def get_stats(game_backup, stats_backup):
+    raw_se = game_backup.soul_eggs_d
+    se = humanize.intword(raw_se, format="%.3f")
+    pe = game_backup.eggs_of_prophecy
+    mult = int(((str(game_backup.epic_research).split('\n'))[1::2][-3]).split(' ')[1]) # get the PROPHECY BONUS level
+    eb = humanize.intword(100 * (((105 + mult) / 100) ** pe) * (1.5 * raw_se), format="%.3f")
+    ge = "{:,}".format(game_backup.golden_eggs_earned - game_backup.golden_eggs_spent)
+    pb = game_backup.piggy_bank
+    pb_mult = 1 + stats_backup.num_piggy_breaks
+    scaled_pb = "{:,}".format(round(pb * (1 + (10 * pb_mult + 10)/100)))
+    return se, pe, eb, ge, scaled_pb
+
+def parse_api_response(response: str):
+    items = {}
+    
+    # Regex to find all spec blocks
+    spec_blocks = re.split(r',\s*spec\s*{', response)  # Split into chunks
+
+    for block in spec_blocks:
+        item = {}
+
+        # Extract other key-value pairs
+        attributes = re.findall(r'(\w+):\s*(\w+)', block)
+        for key, value in attributes:
+            # Convert boolean-like strings and numbers
+            if value.lower() in {"true", "false"}:
+                item[key] = value.lower() == "true"
+            elif key.lower() == "name":
+                name = ' '.join((value).split('_'))
+            elif value.isdigit():
+                item[key] = int(value)
+            elif value.lower() in ["inferior", "lesser", "normal", "greater"]:
+                if 'STONE' not in name:
+                    extension = ["T1", "T2", "T3", "T4"][["inferior", "lesser", "normal", "greater"].index(value.lower())]
+                else:
+                    if 'FRAGMENT' in name:
+                        extension = "T0"
+                    else:
+                        extension = ["T1", "T2", "T3"][["inferior", "lesser", "normal"].index(value.lower())]
+
+        items[f"{extension} {name}"] = item
+
+    return items
+
+def get_multiplier(craft_xp: int):
+    match craft_xp:
+        case _ if craft_xp < 500:
+            multip = 1.00
+        case _ if craft_xp < 3000:
+            multip = 1.05
+        case _ if craft_xp < 8000:
+            multip = 1.10
+        case _ if craft_xp < 18000:
+            multip = 1.15
+        case _ if craft_xp < 43000:
+            multip = 1.20
+        case _ if craft_xp < 93000:
+            multip = 1.25
+        case _ if craft_xp < 193000:
+            multip = 1.30
+        case _ if craft_xp < 443000:
+            multip = 1.35
+        case _ if craft_xp < 943000:
+            multip = 1.40
+        case _ if craft_xp < 1943000:
+            multip = 1.45
+        case _ if craft_xp < 3943000:
+            multip = 1.50
+        case _ if craft_xp < 7943000:
+            multip = 1.55
+        case _ if craft_xp < 15943000:
+            multip = 1.60
+        case _ if craft_xp < 30943000:
+            multip = 1.65
+        case _ if craft_xp < 50943000:
+            multip = 1.70
+        case _ if craft_xp < 85943000:
+            multip = 1.75
+        case _ if craft_xp < 145943000:
+            multip = 1.85
+        case _ if craft_xp < 245943000:
+            multip = 2.00
+        case _ if craft_xp < 395943000:
+            multip = 2.25
+        case _ if craft_xp < 595943000:
+            multip = 2.50
+        case _ if craft_xp < 845943000:
+            multip = 3.00
+        case _ if craft_xp < 1145943000:
+            multip = 3.50
+        case _ if craft_xp < 1470943000:
+            multip = 4.00
+        case _ if craft_xp < 1820943000:
+            multip = 4.50
+        case _ if craft_xp < 2220943000:
+            multip = 5.00
+        case _ if craft_xp < 2720943000:
+            multip = 6.00
+        case _ if craft_xp < 3320943000:
+            multip = 7.00
+        case _ if craft_xp < 4070943000:
+            multip = 8.00
+        case _ if craft_xp < 5070943000:
+            multip = 9.00
+        case _:
+            multip = 10.00
+    return multip
+
 def save(dict, name):
     json_object = json.dumps(dict, indent=4)
     with open(name, 'w') as writer:
         writer.write(json_object)
 
-##### FUNCTIONS CALLED DIRECTLY OR FROM OUTSIDE #####
+##### FUNCTIONS CALLED FROM OUTSIDE #####
 
 def get_full_inventory(user: str, user_id: str) -> None:
     first_contact_request = ei_pb2.EggIncFirstContactRequest()
@@ -130,6 +265,9 @@ def get_full_inventory(user: str, user_id: str) -> None:
     first_contact_response.ParseFromString(base64.b64decode(response.text))
 
     raw_inventory = first_contact_response.backup.artifacts_db.inventory_items
+    raw_artifact_stats = first_contact_response.backup.artifacts_db.artifact_status
+    formatted_artifact_stats = parse_api_response(str(raw_artifact_stats))
+
     # print(str(first_contact_response.backup.contracts.current_coop_statuses)) # this is neat! implement in future!
     raw_inventory = str(raw_inventory).split('\n')
 
@@ -139,19 +277,25 @@ def get_full_inventory(user: str, user_id: str) -> None:
 
     game_backup = first_contact_response.backup.game
     stats_backup = first_contact_response.backup.stats
-    raw_se = game_backup.soul_eggs_d
-    se = humanize.intword(raw_se, format="%.3f")
-    pe = game_backup.eggs_of_prophecy
-    mult = int(((str(game_backup.epic_research).split('\n'))[1::2][-3]).split(' ')[1]) # get the PROPHECY BONUS level
-    eb = humanize.intword(100 * (((105 + mult) / 100) ** pe) * (1.5 * raw_se), format="%.3f")
-    ge = "{:,}".format(game_backup.golden_eggs_earned - game_backup.golden_eggs_spent)
-    pb = game_backup.piggy_bank
-    pb_mult = 1 + stats_backup.num_piggy_breaks
-    scaled_pb = "{:,}".format(round(pb * (1 + (10 * pb_mult + 10)/100)))
-    player_info = {"SOUL EGGS": se, "EGGS OF PROPHECY": pe, "RAW EB %": eb, "GOLDEN EGGS": ge, "PIGGY": scaled_pb}
-    save(player_info, f'{base_dir}{user}_player info.json')
+    se, pe, eb, ge, scaled_pb = get_stats(game_backup, stats_backup)
 
-def sort_by_name(user: str) -> None:
+    craft_xp = int(first_contact_response.backup.artifacts.crafting_xp)
+    multip = get_multiplier(craft_xp)
+
+    last_api_time = int(first_contact_response.backup.approx_time)
+
+    player_info = {"SOUL EGGS": se, "EGGS OF PROPHECY": pe, "RAW EB %": eb,
+                   "GOLDEN EGGS": ge, "PIGGY": scaled_pb, "CRAFTING XP": craft_xp, "ODDS MULTTIPLIER": multip}
+
+    mission_times = get_current_missions(str(first_contact_response.backup.artifacts_db.mission_infos))
+
+    for i in range(len(mission_times)):
+        player_info[f"Mission {i+1} return"] = mission_times[i]
+    
+    save(player_info, f'{base_dir}{user}_player info.json')
+    return formatted_artifact_stats
+
+def sort_by_name(user: str, formatted_artifact_stats) -> None:
 
     # format: {"stones": {"T0 PROPHECY STONE FRAGMENT": [qty, value], ...}, "ingredients": {"T1 GOLD METEORITE": [qty, value], ...}, "artifacts": {T1 LIGHT OF EGGENDIL: qty, ...}}
 
@@ -167,17 +311,17 @@ def sort_by_name(user: str) -> None:
         for i in [0, 1, 2, 3]:
             fragment = ' FRAGMENT' if i == 0 else ''
             stone_name = f'T{i} {stone} STONE{fragment}'
-            quantity_dict["stones"][stone_name] = [0, 0]
+            quantity_dict["stones"][stone_name] = [0, 0, 0]
 
     for ingredient in ingredient_types: # fill all ingredients with defaults
         for i in [1, 2, 3]:
             ingredient_name = f'T{i} {ingredient}'
-            quantity_dict["ingredients"][ingredient_name] = [0, 0]
+            quantity_dict["ingredients"][ingredient_name] = [0, 0, 0]
 
     for artifact in artifact_types: # fill all artifacts with defaults
         for i in [1, 2, 3, 4]:
             artifact_name = f'T{i} {artifact}'
-            quantity_dict["artifacts"][artifact_name] = 0
+            quantity_dict["artifacts"][artifact_name] = [0, 0]
         
     for item in aft_dict: # update quantities
         if aft_dict[item][0] == 'stone' or aft_dict[item][0] == 'fragment': # standalone stones
@@ -192,13 +336,17 @@ def sort_by_name(user: str) -> None:
 
         if aft_dict[item][0] == 'artifact': # artifacts (just quantities, no sort by rarity)
             if item[2] not in ['R', 'E', 'L']: # common
-                quantity_dict["artifacts"][item] += aft_dict[item][1]
+                quantity_dict["artifacts"][item][0] += aft_dict[item][1]
             else: # anything else
-                quantity_dict["artifacts"][(item[0:2] + item[3:]).split(' #')[0]] += 1
+                quantity_dict["artifacts"][(item[0:2] + item[3:]).split(' #')[0]][0] += 1
     
     for type in ["stones", "ingredients"]: # update values
         for item in quantity_dict[type]:
             quantity_dict[type][item][1] = quantity_dict[type][item][0] * pce_dict[type][item]
+        
+    for type in ["stones", "ingredients", "artifacts"]: # fill in craft count
+        for item in quantity_dict[type]:
+            quantity_dict[type][item][-1] = formatted_artifact_stats[item]["count"]
     
     f.close()
     g.close()
@@ -213,7 +361,15 @@ def stat_list(user: str):
 
     stats = ''
     for stat in stat_dict:
-        stats = stats + f'{stat:<16}: {stat_dict[stat]}\n'
+        if type(stat_dict[stat]) is not list:
+            stats = stats + f'{stat:<17}: {stat_dict[stat]}\n'
+        else:
+            seconds_remaining = stat_dict[stat][0] + stat_dict[stat][1] - int(time.time()) # seconds remaining = (launch + duration) - current
+            if seconds_remaining > 0:
+                time_string = str(datetime.timedelta(seconds=seconds_remaining))
+            else:
+                time_string = 'COLLECT ME'
+            stats = stats + f'{stat:<17}: {time_string}\n'
 
     g.close()
 
@@ -305,10 +461,10 @@ def make_artifact_list(user: str) -> list[tuple[str, str]]:
     total_items = 0
 
     for artifact in artifact_types:
-        q_t1 = artifacts[f'T1 {artifact}']
-        q_t2 = artifacts[f'T2 {artifact}']
-        q_t3 = artifacts[f'T3 {artifact}']
-        q_t4 = artifacts[f'T4 {artifact}']
+        q_t1 = artifacts[f'T1 {artifact}'][0]
+        q_t2 = artifacts[f'T2 {artifact}'][0]
+        q_t3 = artifacts[f'T3 {artifact}'][0]
+        q_t4 = artifacts[f'T4 {artifact}'][0]
         q_tot = q_t1 + q_t2 + q_t3 + q_t4
 
         val_line_1 = f'tier 1 -- Qty: {q_t1}\n'
@@ -478,7 +634,7 @@ def verify_prereqs(user: str) -> tuple[bool, str | None]:
             other = ids[user]
     return met, other
 
-def craft(artifact: str, user: str) -> int:
+def craft(artifact: str, user: str):
     with open(f'C://Desktop//Discord Bot//bot_data//egg_inc_data//{user}_quantity data.json') as f:
         quantity_data = json.load(f)
     with open('C://Desktop//Discord Bot//bot_data//egg_inc_data//crafting_tree.json') as f2:
@@ -521,79 +677,36 @@ def craft(artifact: str, user: str) -> int:
     # hope it works
     return full_tree, available
 
-# usage: https://github.com/derekantrican/EggIncAPI/blob/master/protobuf/ei.proto
+def legendary_odds(user: str, qty: int) -> str:
+    # read the clrafing multiplier:
+    with open(f'{base_dir}{user}_player info.json') as statfile:
+        stat_dict = json.load(statfile)
+        multiplier = stat_dict["ODDS MULTTIPLIER"]
 
-# try first_contact_response.backup.artifacts.tank_fuels
-# see how to access stuff in MissionInfo
+    with open(f'{base_dir}{user}_quantity data.json') as quantities:
+        artifact_dict = json.load(quantities)["artifacts"]
 
-# crafting file format: {artifact_1: {material_1: qty, ...}, artifact_2: {material_1: qty, ...}, ...}
-# ingredients have only 1 material-quantity pair
-# stones can have up to 1 to 2 material-quantity paris
-# artifacts can have a shit ton
+    def calculate_chance(const, mult, crafts):
+        chance = min(const, min(0.1, (max(10.,const/mult))**(0.3*min(1., crafts/400.) - 1.)))
+        return chance
+    
+    def calc_group_chance(start, crafts, const, mult):
+        N = crafts
+        
+        fail0 = 1
+        for i in range(0, N):
+            fail0 *= (1.0 - calculate_chance(const, mult, start + i))
+        return 1 - fail0
+    
+    probs = {}
+    probability = ''
+    
+    for artifact in legendary_base:
+        const = legendary_base[artifact]
+        crafted = artifact_dict[f"{artifact[0:2]} {artifact[4:]}"][1]
+        chance = round(100*calc_group_chance(crafted, qty, const, multiplier),4) # const, multiplier, crafted
+        probs[artifact] = chance
+        probability = probability + f'{artifact:<25}: {chance:<6} %\n'
+        
 
-# eg: t4 book of basan:
-#   t3 book of basan: 12
-#   ----t2 book of basan: 10
-#   --------t1 book of basan: 6
-#   --------t3 golden medeorite: 4
-#   ------------t2 golden meteorite: 11
-#   ----------------t1 golden meteorite: 9
-#   ----t4 the chalice: 3
-#   --------t3 the chalice: 8
-#   ------------t2 the chalice: 6
-#   ----------------t1 the chalice: 4
-#   ----------------t2 golden meteorite: 1
-#   --------------------t1 golden meteorite: 9
-#   ------------t2 tau ceti geode: 4
-#   ----------------t1 tau ceti geode: 12
-#   --------t4 beak of midas: 2
-#   ------------t3 beak of midas: 6
-#   ----------------t2 beak of midas: 5
-#   --------------------t1 beak of midas: 4
-#   ----------------t2 tau ceti geode: 1
-#   --------------------t1 tau ceti geode: 12
-#   ------------t3 golden meteorite: 3
-#   ----------------t2 golden meteorite: 11
-#   --------------------t1 golden meteorite: 9
-#   t4 light of eggendil: 1
-#   ----t3 light of eggendil: 10
-#   --------t2 light of eggendil: 7
-#   ------------t1 light of egendil: 5
-#   ------------t3 tau ceti geode: 1
-#   ----------------t2 tau ceti geode: 14
-#   --------------------t1 tau ceti geode: 12
-#   --------t3 pheonix feather: 4
-#   ------------t2 pheonix feather: 10
-#   ----------------t1 pheonix feather: 6
-#   ----------------t2 tau cei geode: 1
-#   --------------------t1 tau ceti geode: 12
-#   ------------t1 book of basan: 2
-#   ----t4 pheonix feather: 4
-#   --------t3 pheonix feather: 12
-#   ------------t2 pheonix feather: 10
-#   ----------------t1 pheonix feather: 6
-#   ----------------t2 tau cei geode: 1
-#   --------------------t1 tau ceti geode: 12
-#   --------t3 book of basan: 1
-#   ------------t2 book of basan: 10
-#   ----------------t1 book of basan: 6
-#   ----------------t3 golden medeorite: 4
-#   --------------------t2 golden meteorite: 11
-#   ------------------------t1 golden meteorite: 9
-#   ------------t4 the chalice: 3
-#   ----------------t3 the chalice: 8
-#   --------------------t2 the chalice: 6
-#   ------------------------t1 the chalice: 4
-#   ------------------------t2 golden meteorite: 1
-#   ----------------------------t1 golden meteorite: 9
-#   --------------------t2 tau ceti geode: 4
-#   ------------------------t1 tau ceti geode: 12
-#   ----------------t4 beak of midas: 2
-#   --------------------t3 beak of midas: 6
-#   ------------------------t2 beak of midas: 5
-#   ----------------------------t1 beak of midas: 4
-#   ------------------------t2 tau ceti geode: 1
-#   ----------------------------t1 tau ceti geode: 12
-#   --------------------t3 golden meteorite: 3
-#   ------------------------t2 golden meteorite: 11
-#   ----------------------------t1 golden meteorite: 9
+    return probability
