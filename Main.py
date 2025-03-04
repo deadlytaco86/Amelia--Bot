@@ -12,6 +12,7 @@ import discord, random, os
 import numpy as np
 import pandas as pd
 from decimal import Decimal
+from bs4 import BeautifulSoup
 import sympy as sym
 
 from colorama import Fore, Style, init
@@ -137,13 +138,7 @@ def activate_bot(c_dir: str):
     ##################
 
     def read_time():
-        local_time = time.localtime()
-        year_seconds = (local_time.tm_year - 1970) * 365 * 24 * 60 * 60
-        day_seconds = local_time.tm_yday * 24 * 60 * 60
-        hour_seconds = local_time.tm_hour * 60 * 60
-        minute_seconds = local_time.tm_min * 60
-        seconds = local_time.tm_sec
-        total_seconds = year_seconds + day_seconds + hour_seconds + minute_seconds + seconds
+        total_seconds = int(time.time())
         return total_seconds
 
     @client.event
@@ -152,9 +147,9 @@ def activate_bot(c_dir: str):
         await client.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name="for commands"))
         print("Amelia is down to clown!")
         print("------------------------")
-        guild = discord.utils.get(client.guilds, name=" YOUR GUILD HERE ")
+        guild = discord.utils.get(client.guilds, name=" YOUR SERVER HERE ")
         general_channel = discord.utils.get(guild.channels, name='general')
-        bot_channel = discord.utils.get(guild.channels, name='bot-commands')
+        bot_channel = discord.utils.get(guild.channels, name=' NAME OF BOT CHANNEL ')
 
         if not os.path.isfile(f'{c_dir}/bot_data/egg_inc_data/last_update_time.txt'):
             with open(f'{c_dir}/bot_data/egg_inc_data/last_update_time.txt', 'w+') as f:
@@ -924,8 +919,8 @@ def activate_bot(c_dir: str):
             return
         else:
             user_id = fernet.decrypt(base64.b64decode(enc_id)).decode()
-            eim.get_full_inventory(user, user_id)
-            eim.sort_by_name(user)
+            formatted_artifact_stats = eim.get_full_inventory(user, user_id)
+            eim.sort_by_name(user, formatted_artifact_stats)
             await ctx.send('Artifact inventory is now up to date')
 
     @client.command()
@@ -956,14 +951,21 @@ def activate_bot(c_dir: str):
         else:
             user_id = fernet.decrypt(base64.b64decode(enc_id)).decode()
             llc_text = eim.get_llc(user_id)
+            llc_text_new = llc_text.split('<h3>*** OLD LLC FORMULA ***</h3>')[0]
+
+            # Parse HTML with BeautifulSoup
+            soup = BeautifulSoup(llc_text_new, "html.parser")
+            clean_text = soup.get_text(separator="\n", strip=True)
+
+            # Replace extra spaces with a single newline
+            clean_text = "\n".join(line.strip() for line in clean_text.split("\n") if line.strip())
 
             embed = discord.Embed(
                 title='Here is your LLC report...',
-                description='',
+                description=f'```{clean_text}```',  # Format text in a code block for better readability
                 color=0x42f5d4
             )
 
-            embed.add_field(name=f'', value=f'{llc_text}', inline=False)
             await ctx.send(embed=embed)
 
     @client.command()
@@ -1178,22 +1180,19 @@ def activate_bot(c_dir: str):
                 await ctx.send(file=file)
 
     @client.command()
-    async def craft_odds(ctx, num=None, *args):
-        if num is None:
-            await ctx.send('missing arguments: <number of crafts> <artifact>')
-            return
-        artifact = (' '.join(args)).upper()
-        if artifact in eim.legendary_types:
-            odds = eim.legendary_probs[eim.legendary_types.index(artifact)]
-            try:
-                prob = 100 - 100*binom.cdf(1 - 1, int(num), odds/100) - (100 - 100*binom.cdf(2 - 1, int(num), odds/100))
-                await ctx.send(f'{prob} %')
-            except:
-                await ctx.send('please make sure the first argument in a number')
-            return
-        else:
-            await ctx.send('artifact not regognized or does not have a legendary variant')
-            return
+    async def craft_odds(ctx, crafts=None):
+        user = str(ctx.author)
+        qty = 1 if crafts is None else int(crafts)
+        odds = eim.legendary_odds(user, qty)
+        embed = discord.Embed(
+            title='LEG CRAFT ODDS',
+            description=f'--Odds of crafting a LEG in the next {qty} crafts--',
+            color=0xffff00
+        )
+
+        embed.add_field(name="", value=f'```{odds}```', inline=False)
+        await ctx.send(embed=embed)
+        
 
     ########################################
     ##### things to do every so often ######
@@ -1209,8 +1208,8 @@ def activate_bot(c_dir: str):
                 for i in range(len(users)):
                     try:
                         user_id = fernet.decrypt(base64.b64decode(ids[i])).decode()
-                        eim.get_full_inventory(users[i], user_id)
-                        eim.sort_by_name(users[i])
+                        formatted_artifact_stats = eim.get_full_inventory(users[i], user_id)
+                        eim.sort_by_name(users[i], formatted_artifact_stats)
                         current_date_str = date.today().strftime('%Y-%m-%d')
                         _ = eim.create_archive_entry(users[i], current_date_str)
                         await bot_channel.send(f'updated inventory and archive for {users[i]}')
@@ -1244,4 +1243,3 @@ if __name__ == "__main__":
 # https://github.com/menno-egginc/eggincdatacollection-docs/blob/main/DataEndpoints.md
 # https://github.com/menno-egginc/egg/tree/main/protobuf
 # https://inicio-multi.netlify.app/
-
